@@ -1,0 +1,265 @@
+---
+title: "Dominant Resident males cooperate with Satellites to limit their losses"
+author: "Belojevis et al."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## MS structure
+
+
+I. Longitudinal hierarchy analysis BOTH in SATELLITE and in MARGINAL conditions: Lek level hierarchy ~ Session level hierarchy ~ Combo level ~ Combo total level ~ Season level hierarchy (+ In Satellite condition who co-displayed)
+
+Lek rank and satellite cooperation/acceptance/tolerance/rejection (ordinal scale) predict pair formation during/co-display duration the session
+  - Co-display (1/0) ~ 
+  - Co-display duration ~
+  Lek hierarchy effect between co-displaying individuals only on copulation success and behaviour
+
+
+II. Female baseline
+
+III. Session level
+
+  IIIa. Co-display pattern description (+ Pair formation and terminations between res and sat: courting and attacking satellite and other residents)
+  
+  IIIb. co-display formation and termination
+
+  IIIc. Session level: Residents within sessions - co-displaying males vs. non-co-displaying ones within session
+
+  1. female visit (nr and duration)
+  2. copulations 
+  3. display activity/co-display
+  4. aggression - is this needed on this level
+    towards other residents
+    towards satellite partner
+    
+
+IV. Combo level: within male analysis between Satellite and Marginal conditions - choose if both or only one
+ 
+
+- either mean of the week (Method 2) or add days of the week as random (1,2,3 - Method 1)
+
+  1. Copulation nr. 
+  2. copulation occurrences
+  3. visits nr
+  4. duration
+  5. Aggression
+  6. Display activity/co-display
+  
+V. combo total level
+
+  - between conditions within a combo
+  - between conditions within a specific male
+  - between conditions within same ranking individuals
+
+
+  1. Copulation nr. 
+  2. copulation occurrences
+  3. visits nr
+  4. duration
+  5. Aggression
+  6. Display activity/co-display
+  
+  
+VI. Season level
+
+  1. Copulation number
+  2. Copulation occurrences
+  3. Visit nr.
+  4. Visit duration
+  5. Aggression towards Satellite explains better the sat or the marg hierarchy (in sat cond are successful males less aggressive towards the satellte)
+  6. Overall lek attitude score 
+  7. Overall display/co-display and copulation relationship between conditions
+  
+  
++1  Hierarchy steepness in marginal and satellites conditions over the season - to this MS??
+
+
+### Packages
+
+```{r packages and data set}
+
+library(lme4)
+library(lmtest)
+library(MASS)
+library(glmmTMB)
+library(performance)
+library(rstanarm)
+library(brms)  # for models
+library(bayesplot)
+library(ggplot2)
+library(dplyr)
+library(tidybayes)
+library(modelr)
+library(pscl)
+library(GLMMadaptive)
+library(fitdistrplus)
+library(AER)
+library(tidyr)
+library(car)
+library(AICcmodavg)
+library(VGAM) # tobit function
+library(DHARMa)
+library(readxl)
+library(stringr)
+library(sjPlot) # ploy_model
+library(scales)
+library(emmeans)
+library(patchwork)
+library(data.table)
+
+
+```
+
+
+
+##### Data analysis #####
+
+### II. Female visit/copulation baseline 
+
+## Female baseline data set proeparation
+
+Identifying variables that influences female visits and copulations over the season. Keep the ones with an effect for the later tests.
+
+
+```{r}
+## Number of copulations
+
+Female_baseline <- read.csv("Residents benefits ms data analysis Kriszti Jelena/Female_baseline.csv")
+
+Female_baseline_res <- read.csv("Residents benefits ms data analysis Kriszti Jelena/Female_baseline_res.csv")
+
+## Baseline variables: Date2 and Fm_ID - but only based on the zero-inflated model!
+
+# Copulations - using "Total_copulation_nr" for a male that is the total number of successful and interrupted copulations for a session for a male independently from the state - here I use total cop number because I test the female willingness to copulate and not the actual success
+
+hist(Female_baseline$Total_copulation_nr)
+
+hist(Female_baseline_res$Total_copulation_nr)
+
+sum(Female_baseline$Copulation_nr) # 286
+
+sum(Female_baseline$Copulation_nr[Female_baseline$Fm_ID == "Fm1"]) # 134
+
+sum(Female_baseline$Copulation_nr[Female_baseline$Fm_ID == "Fm2"]) # 152
+
+# Gaussian
+fm_cop_bl_lm_model1 <- glmmTMB(Copulation_nr ~  Date2 + Fm_ID + Time, data = Female_baseline)
+summary(fm_cop_bl_lm_model1)
+
+# Neg bin
+fm_cop_bl_nb_model1 <- glmmTMB(Copulation_nr ~  Date2 + Fm_ID + Time, data = Female_baseline, family = nbinom2)
+summary(fm_cop_bl_nb_model1)
+performance::check_zeroinflation(fm_cop_bl_nb_model1, tolerance = 0.05)
+check_overdispersion(fm_cop_bl_nb_model1)
+# Ok
+
+fm_cop_bl_poi_model1 <- glmmTMB(Copulation_nr ~  Date2 + Fm_ID + Time, family = poisson(link="log"), data = Female_baseline)
+summary(fm_cop_bl_poi_model1)
+performance::check_zeroinflation(fm_cop_bl_poi_model1, tolerance = 0.05)
+check_overdispersion(fm_cop_bl_poi_model1)
+# Zero inflated, overdispersed
+
+# Zero-infalted neg bin
+fm_cop_bl_zi_nb_model1 <- glmmTMB(Copulation_nr ~  Date2 + Fm_ID + Time,, data = Female_baseline, family = nbinom2, zi = ~ Date2 + Fm_ID + Time)
+summary(fm_cop_bl_zi_nb_model1)
+performance::check_zeroinflation(fm_cop_bl_zi_nb_model1, tolerance = 0.05)
+check_overdispersion(fm_cop_bl_zi_nb_model1)
+confint(fm_cop_bl_zi_nb_model1, level = 0.95, method = "profile")
+#Ok, final model
+
+anova(fm_cop_bl_nb_model1, fm_cop_bl_zi_nb_model1)
+
+```
+
+
+# II/b. Visit numbers
+
+
+```{r Visit number models}
+
+Female_baseline <- read.csv("Residents benefits ms data analysis Kriszti Jelena/Female_baseline.csv")
+
+### Occurrence of female visits
+
+Female_baseline$Visit_occurrence <- ifelse(Female_baseline$Total_visit_nr_all_females > 0, 1, 0)
+
+log_reg_model <- glm(Visit_occurrence ~ Date2 + Fm_ID + Time, data = Female_baseline, family = binomial)
+summary(log_reg_model)
+
+plot_model(log_reg_model, type = "pred", terms = c("Date2", "Fm_ID")) +
+  geom_jitter(width = 0, data = Female_baseline, 
+             aes(x = Date2, y = Visit_occurrence, color = Fm_ID, group = Fm_ID),
+             inherit.aes = FALSE) 
+  # scale_x_continuous(expand = c(0, 0)) +
+  # scale_y_continuous(labels = percent, limits = c(0, 1)) +
+  # labs(x = "Trait Anger", y = "Predicted Probability of Response", title = NULL) +
+  theme_light()
+  
+  
+plot_model(log_reg_model, type = "pred", terms = "Date2") +
+  geom_jitter(width = 0, data = Female_baseline, 
+             aes(x = Date2, y = Visit_occurrence),
+             inherit.aes = FALSE) 
+  # scale_x_continuous(expand = c(0, 0)) +
+  # scale_y_continuous(labels = percent, limits = c(0, 1)) +
+  # labs(x = "Trait Anger", y = "Predicted Probability of Response", title = NULL) +
+  theme_light()
+
+  
+  
+### Visit numbers
+
+  sum(Female_baseline$Total_visit_nr_all_females) # 733
+
+sum(Female_baseline$Total_visit_nr_all_females[Female_baseline$Fm_ID == "Fm1"]) # 141
+
+sum(Female_baseline$Total_visit_nr_all_females[Female_baseline$Fm_ID == "Fm2"]) # 592
+
+
+# Gaussian
+fm_vis_bl_lm_model1 <- glmmTMB(Total_visit_nr_all_females ~Date2 + I(Date2^2) +  Fm_ID + Time, data = Female_baseline)
+summary(fm_vis_bl_lm_model1)
+
+# Neg bin
+fm_vis_bl_nb_model1 <- glmmTMB(Total_visit_nr_all_females ~ Date2 +  Fm_ID + Time, data = Female_baseline,  family = nbinom2)
+summary(fm_vis_bl_nb_model1)
+performance::check_zeroinflation(fm_vis_bl_nb_model1, tolerance = 0.05)
+check_overdispersion(fm_vis_bl_nb_model1)
+# Zero inflated
+
+fm_vis_bl_nb_model1 <- glmmTMB(Total_visit_nr_all_females ~ Date2 + I(Date2^2) +  Fm_ID + Time, data = Female_baseline,  family = nbinom2)
+summary(fm_vis_bl_nb_model1)
+performance::check_zeroinflation(fm_vis_bl_nb_model1, tolerance = 0.05)
+check_overdispersion(fm_vis_bl_nb_model1)
+# Zero inflated, Date2^2 is significant
+
+
+# Poisson
+fm_vis_bl_nb_model1 <- glmmTMB(Total_visit_nr_all_females ~ Date2 + I(Date2^2) +  Fm_ID + Time, data = Female_baseline,  family = poisson(link = "log"))
+summary(fm_vis_bl_nb_model1)
+performance::check_zeroinflation(fm_vis_bl_nb_model1, tolerance = 0.05)
+check_overdispersion(fm_vis_bl_nb_model1)
+# zero inflated, overdispersed
+
+
+# Zero-inflated neg bin
+fm_vis_bl_zinb_model1 <- glmmTMB(Total_visit_nr_all_females ~ Date2+  Fm_ID + Time + Total_nr_display, data = Female_baseline,  family = nbinom2, zi = ~ 1 ) 
+summary(fm_vis_bl_zinb_model1)
+performance::check_zeroinflation(fm_vis_bl_zinb_model1, tolerance = 0.05)
+check_overdispersion(fm_vis_bl_zinb_model1)
+# Zero-inflated Date2^2 is not significant
+
+
+# Zero-inflated neg bin full model
+fm_vis_bl_zinb_model2 <- glmmTMB(Total_visit_nr_all_females ~ Date2 +  Fm_ID + Time, data = Female_baseline,  family = nbinom2, zi = ~ 1 + Date2 + Fm_ID + Time) 
+summary(fm_vis_bl_zinb_model2)
+performance::check_zeroinflation(fm_vis_bl_zinb_model2, tolerance = 0.05)
+check_overdispersion(fm_vis_bl_zinb_model2)
+confint(fm_vis_bl_zinb_model2, level = 0.95, method = "profile")
+# Ok
+
