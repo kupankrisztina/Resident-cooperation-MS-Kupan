@@ -1,6 +1,6 @@
 ---
 title: "Dominant Resident males cooperate with Satellites to limit their losses"
-author: "Belojevis et al."
+author: "Belojevic et al."
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -11,72 +11,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## MS structure
 
-
-I. Longitudinal hierarchy analysis BOTH in SATELLITE and in MARGINAL conditions: Lek level hierarchy ~ Session level hierarchy ~ Combo level ~ Combo total level ~ Season level hierarchy (+ In Satellite condition who co-displayed)
-
-Lek rank and satellite cooperation/acceptance/tolerance/rejection (ordinal scale) predict pair formation during/co-display duration the session
-  - Co-display (1/0) ~ 
-  - Co-display duration ~
-  Lek hierarchy effect between co-displaying individuals only on copulation success and behaviour
+### Data and analysis upload is in progress ###
 
 
-II. Female baseline
+I. Non-social predictors
 
-III. Session level
+II. Between Resident differences with a Satellite on the lek 
 
-  IIIa. Co-display pattern description (+ Pair formation and terminations between res and sat: courting and attacking satellite and other residents)
+III. Within-Resident differences between the Satellite and Control conditions 
   
-  IIIb. co-display formation and termination
-
-  IIIc. Session level: Residents within sessions - co-displaying males vs. non-co-displaying ones within session
-
-  1. female visit (nr and duration)
-  2. copulations 
-  3. display activity/co-display
-  4. aggression - is this needed on this level
-    towards other residents
-    towards satellite partner
-    
-
-IV. Combo level: within male analysis between Satellite and Marginal conditions - choose if both or only one
- 
-
-- either mean of the week (Method 2) or add days of the week as random (1,2,3 - Method 1)
-
-  1. Copulation nr. 
-  2. copulation occurrences
-  3. visits nr
-  4. duration
-  5. Aggression
-  6. Display activity/co-display
-  
-V. combo total level
-
-  - between conditions within a combo
-  - between conditions within a specific male
-  - between conditions within same ranking individuals
-
-
-  1. Copulation nr. 
-  2. copulation occurrences
-  3. visits nr
-  4. duration
-  5. Aggression
-  6. Display activity/co-display
-  
-  
-VI. Season level
-
-  1. Copulation number
-  2. Copulation occurrences
-  3. Visit nr.
-  4. Visit duration
-  5. Aggression towards Satellite explains better the sat or the marg hierarchy (in sat cond are successful males less aggressive towards the satellte)
-  6. Overall lek attitude score 
-  7. Overall display/co-display and copulation relationship between conditions
-  
-  
-+1  Hierarchy steepness in marginal and satellites conditions over the season - to this MS??
 
 
 ### Packages
@@ -119,9 +62,9 @@ library(data.table)
 
 ##### Data analysis #####
 
-### II. Female visit/copulation baseline 
+### I. Non-social predictors 
 
-## Female baseline data set proeparation
+# Female baseline data set proeparation
 
 Identifying variables that influences female visits and copulations over the season. Keep the ones with an effect for the later tests.
 
